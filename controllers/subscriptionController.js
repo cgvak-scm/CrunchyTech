@@ -1,0 +1,353 @@
+var SubscriptionModel = require('../config/db.config');
+const axios = require('axios').default;
+const ZOHO = {
+  client_id: process.env.SELF_ZOHO_CLIENT_ID,
+  client_secret: process.env.SELF_ZOHO_SECRET,
+  refresh_token: process.env.SELF_ZOHO_REFRESH_TOKEN,
+  redirect_uri: process.env.SELF_ZOHO_REDIRECT_URI,
+  organizationId: process.env.SELF_ZOHO_ORGANIZATION_ID,
+  pollRate: process.env.SELF_ZOHO_POLL_RATE_SECONDS
+};
+const moment = require('moment');
+const jwt = require('jsonwebtoken');
+
+let syncInProgress = false;
+let accessTokenErrorRetry = 0;
+let allSubscriptionsErrorRetry = 0;
+let oneSubscriptionErrorRetry = 0;
+
+async function generateAccessToken() {
+  return await axios({
+    method: 'post',
+    url: "https://accounts.zoho.com/oauth/v2/token",
+    params: {
+      refresh_token: ZOHO.refresh_token,
+      client_id: ZOHO.client_id,
+      client_secret: ZOHO.client_secret,
+      grant_type: "refresh_token",
+      redirect_uri: ZOHO.redirect_uri
+    }
+  }).then(function (response) {
+    let accessToken = response.data.access_token;
+    return accessToken;
+  })
+  .catch(function (err) {
+    console.log(`Error generating access token from Zoho: `, err.response.data);
+    if (accessTokenErrorRetry < 3) {
+      accessTokenErrorRetry += 1;
+      console.log(`Retry ${accessTokenErrorRetry}, for generating new access token`);
+      generateAccessToken();
+    }
+    else {
+      accessTokenErrorRetry = 0;
+      console.log("Maximum retries reached!");
+      return false;
+    }
+  });
+}
+
+async function getOneSubscriptionFromZoho(zohoSubscriptionId, accessToken) {
+  return await axios({
+    method: 'get',
+    url: `https://subscriptions.zoho.com/api/v1/subscriptions/${zohoSubscriptionId}`,
+    headers: {
+      "X-com-zoho-subscriptions-organizationid": ZOHO.organizationId,
+      "Authorization": `Zoho-oauthtoken ${accessToken}`
+    }
+  }).then(function (response) {
+    return response.data.subscription;
+  })
+  .catch(function (err) {
+    console.log(`Error fetching one subscription from Zoho: `, err.response.data);
+    if (err && err.response && err.response.data && err.response.data.code && err.response.data.code != 1002) {
+      if (oneSubscriptionErrorRetry < 3) {
+        oneSubscriptionErrorRetry += 1;
+        console.log(`Retry ${oneSubscriptionErrorRetry}, with new access token`);
+        getOneSubscriptionFromZoho(zohoSubscriptionId, accessToken);
+      }
+      else {
+        oneSubscriptionErrorRetry = 0;
+        console.log("Maximum retries reached!");
+        return false;
+      }
+    }
+    else {
+      return false;
+    }
+  });
+}
+
+async function insertSubscriptionToDb(zohoSubscription, subscriptionType) {
+  try {
+    SubscriptionModel.query(`INSERT INTO t_subscriptions 
+      (id_zoho_subscription, f_id_subscription_type, id_customer_id, id_customer_name, id_status, id_next_billing_at,id_token_expires_at, id_last_pulled_date, id_last_issue_date, id_quantity, id_current_term_starts_at, id_activated_at)
+      SELECT * FROM (SELECT '${zohoSubscription.subscription_id}' AS id_zoho_subscription, '${subscriptionType.id_type}' AS f_id_subscription_type, '${zohoSubscription.customer_id}' AS id_customer_id, '${zohoSubscription.customer_name}' AS id_customer_name, '${zohoSubscription.status}' AS id_status, '${zohoSubscription.next_billing_at}' AS id_next_billing_at, null AS id_token_expires_at, '${moment().format('YYYY-MM-DD hh:mm:ss')}' AS id_last_pulled_date, null AS id_last_issue_date, '${zohoSubscription.plan.quantity}' AS id_quantity, '${zohoSubscription.current_term_starts_at}' AS id_current_term_starts_at, '${zohoSubscription.activated_at}' AS id_activated_at) AS tmp
+      WHERE NOT EXISTS (
+          SELECT id_zoho_subscription FROM t_subscriptions WHERE id_zoho_subscription = '${zohoSubscription.subscription_id}'
+      ) LIMIT 1`, function (err, data) {
+      if (err) {
+        console.log(`Error inserting subscription into Db - ${zohoSubscription.subscription_id} : `, err);
+      } else {
+        console.log(`Successfully inserted subscription into Db - ${zohoSubscription.subscription_id} : `, data);
+      }
+    })
+  } catch (error) {
+    console.log(`Internal server error: `, error);
+  }
+}
+
+async function updateSubscriptionInDb(zohoSubscription, dbSubscription, subscriptionType) {
+  try {
+    let id_last_issue_date = dbSubscription.id_last_issue_date ? dbSubscription.id_last_issue_date : null;
+    let id_token_expires_at = dbSubscription.id_token_expires_at ? dbSubscription.id_token_expires_at : null;
+
+    SubscriptionModel.query(`UPDATE t_subscriptions SET id_zoho_subscription='${zohoSubscription.subscription_id}', 
+      f_id_subscription_type='${subscriptionType.id_type}', id_customer_id='${zohoSubscription.customer_id}', id_customer_name='${zohoSubscription.customer_name}', id_status='${zohoSubscription.status}', id_next_billing_at='${zohoSubscription.next_billing_at}', id_token_expires_at=${id_token_expires_at}, id_last_pulled_date='${moment().format('YYYY-MM-DD hh:mm:ss')}', id_last_issue_date=${id_last_issue_date}, id_quantity='${zohoSubscription.plan.quantity}', id_current_term_starts_at='${zohoSubscription.current_term_starts_at}', id_activated_at='${zohoSubscription.activated_at}' WHERE id_subscription = '${dbSubscription.id_subscription}'`, function (err, data) {
+      if (err) {
+        console.log(`Error updating subscription into Db - ${zohoSubscription.subscription_id} : `, err);
+      } else {
+        console.log(`Successfully updated subscription into Db - ${zohoSubscription.subscription_id} : `, data);
+      }
+    })
+  } catch (error) {
+    console.log(`Internal server error: `, error);
+  }
+}
+
+async function findSubscriptionFromDb(zohoSubscription, subscriptionType) {
+  try {
+    SubscriptionModel.query(`SELECT * FROM t_subscriptions WHERE id_zoho_subscription = '${zohoSubscription.subscription_id}'`, function (err, data) {
+      if (err) {
+        console.log(`Error when finding subscription from Db - ${zohoSubscription.subscription_id} : `, err);
+      }
+      else {
+
+        if (data.length) {
+          let dbSubscription = data[0];
+          updateSubscriptionInDb(zohoSubscription, dbSubscription, subscriptionType);
+        }
+        else {
+          insertSubscriptionToDb(zohoSubscription, subscriptionType);
+        }
+
+      }
+    })
+  } catch (error) {
+    console.log(`Internal server error: `, error);
+  }
+}
+
+async function insertSubscriptionTypeToDb(subscription, accessToken, zohoSubscription) {
+  try {
+    SubscriptionModel.query(`INSERT INTO t_subscription_types (id_label) VALUES ('${zohoSubscription.plan.name}')`, function (err, data) {
+      if (err) {
+        console.log(`Error when inserting subscription type into Db - ${zohoSubscription.plan.name} : `, err);
+      }
+      else {
+        findSubscriptionTypeFromDb(subscription, accessToken, zohoSubscription);
+      }
+    })
+  } catch (error) {
+    console.log(`Internal server error: `, error);
+  }
+}
+
+async function findSubscriptionTypeFromDb(subscription, accessToken, zohoSubscription) {
+  if (!zohoSubscription) {
+    let zohoSubscriptionId = subscription.subscription_id;
+    zohoSubscription = await getOneSubscriptionFromZoho(zohoSubscriptionId, accessToken);
+    findSubscriptionTypeFromDb(subscription, accessToken, zohoSubscription);
+  }
+  else {
+    try {
+      SubscriptionModel.query(`SELECT * FROM t_subscription_types WHERE id_label = '${zohoSubscription.plan.name}'`, function (err, data) {
+        if (err) {
+          console.log(`Error when finding subscription type into Db - ${zohoSubscription.plan.name} : `, err);
+        }
+        else {
+
+          if (data.length) {
+            let subscriptionType = data[0];
+            findSubscriptionFromDb(zohoSubscription, subscriptionType);
+          }
+          else {
+            insertSubscriptionTypeToDb(subscription, accessToken, zohoSubscription);
+          }
+
+        }
+      })
+    } catch (error) {
+      console.log(`Internal server error: `, error);
+    }
+  }
+}
+
+async function getAllSubscriptionsFromZoho(accessToken, page) {
+  if (!accessToken) {
+    accessToken = await generateAccessToken();
+    if (accessToken) {
+      console.log("New access token created: ", accessToken);
+      getAllSubscriptionsFromZoho(accessToken, page);
+    }
+  }
+  else {
+    axios({
+      method: 'get',
+      url: `https://subscriptions.zoho.com/api/v1/subscriptions?page=${page}`,
+      headers: {
+        "X-com-zoho-subscriptions-organizationid": ZOHO.organizationId,
+        "Authorization": `Zoho-oauthtoken ${accessToken}`
+      }
+    }).then(function (response) {
+      let subscriptions = response.data.subscriptions;
+      let page = response.data.page_context.page;
+      let hasMorePage = response.data.page_context.has_more_page
+  
+      if (subscriptions.length) {
+        function subscriptionsLoop(i, callback) {
+          if (i < 2) {
+            let subscription = subscriptions[i];
+            findSubscriptionTypeFromDb(subscription, accessToken, null);
+            setTimeout(function() {
+              subscriptionsLoop(i+1, callback);
+            }, 10000)
+          }
+          else {
+            callback();
+          }
+        }
+
+        subscriptionsLoop(0, function() {
+          if (hasMorePage) {
+            page += 1;
+            getAllSubscriptionsFromZoho(accessToken, page);
+          }
+        });
+      }
+    })
+    .catch(function (err) {
+      console.log(`Error fetching subscriptions from Zoho: `, err.response.data);
+      if (allSubscriptionsErrorRetry < 3) {
+        allSubscriptionsErrorRetry += 1;
+        console.log(`Retry ${allSubscriptionsErrorRetry}, with new access token for page = ${page}`);
+        getAllSubscriptionsFromZoho(false, page);
+      }
+      else {
+        allSubscriptionsErrorRetry = 0;
+        console.log("Maximum retries reached!");
+      }
+    });
+  }
+
+  // if (syncInProgress) {
+  //   setTimeout(() => {
+  //     getAllSubscriptionsFromZoho(false, 1);
+  //   }, ZOHO.pollRate * 1000);
+  // }
+}
+
+/**
+ * subscriptionController.js
+ *
+ * @description :: Server-side logic for managing subscriptions.
+ */
+module.exports = {
+
+  /**
+   * zohoAuthController.startSubscriptionSync()
+   */
+   startSubscriptionSync: async function(req, res) {
+    try {
+      syncInProgress = true;
+      getAllSubscriptionsFromZoho(false, 1);
+      res.send("Sync started!");
+    } catch (error) {
+      console.log(`Internal server error: `, error);
+      res.status(500).json(error);
+    }
+  },
+
+  /**
+   * zohoAuthController.stopSubscriptionSync()
+   */
+  stopSubscriptionSync: function(req, res) {
+    try {
+      syncInProgress = false;
+      res.send("Sync stopped!");
+    } catch (error) {
+      console.log(`Internal server error: `, error);
+      res.status(500).json(error);
+    }
+  },
+
+  /**
+   * zohoAuthController.getSubscription()
+   */
+  getSubscription: async function(req, res) {
+    try {
+      let accessToken = await generateAccessToken();
+      if (accessToken) {
+        let zohoSubscriptionId = req.params.zohoSubscriptionId;
+        let zohoSubscription = await getOneSubscriptionFromZoho(zohoSubscriptionId, accessToken);
+        
+        if (zohoSubscription) {
+          let dbSubscription = null;
+
+          SubscriptionModel.query(`SELECT * FROM t_subscriptions WHERE id_zoho_subscription='${zohoSubscriptionId}' LIMIT 1`, function (err, data) {
+            if (err) {
+              console.log(`Error when finding subscription from Db - ${zohoSubscriptionId} : `, err);
+              res.status(500).json(err);
+            } 
+            else {
+              if (data.length) {
+                dbSubscription = data[0];
+              }
+              
+              let jwtPayload = {
+                status: zohoSubscription.status,
+                subscriptionPlanLabel: zohoSubscription.plan.name,
+                issuedTimeAt: dbSubscription ? dbSubscription.id_last_issue_date : null,
+                expirationTime: dbSubscription ? dbSubscription.id_token_expires_at : null
+              };
+              
+              jwt.sign(jwtPayload, ZOHO.client_id, { expiresIn: '1h' }, function(err, token) {
+                if (err) {
+                  res.status(500).json(err);
+                }
+                else {
+                  res.status(200).json({
+                    token: token,
+                    expiry: 3600
+                  });
+                }
+              });
+            }
+          })
+        }
+        else {
+          res.status(404).send(`Subscription details for subscription id ${zohoSubscriptionId} not found`);
+        }
+      }
+      else {
+        res.status(500).send("Unable to create access token!");
+      }
+    } catch (error) {
+      console.log(`Internal server error: `, error);
+      res.status(500).json(error);
+    }
+  },
+
+  /**
+   * zohoAuthController.renewZohoSubscription()
+   */
+  renewZohoSubscription: async function(req, res) {
+    
+  },
+
+  /**
+   * zohoAuthController.verifyZohoSubscription()
+   */
+  verifyZohoSubscription: async function(req, res) {
+    
+  }
+};
