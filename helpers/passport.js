@@ -2,7 +2,6 @@ var passport = require('passport');
 const jwt = require('jsonwebtoken');
 const fs = require('fs');
 const cert = fs.readFileSync(process.env.SELF_PUBLIC_KEY_PATH);
-const moment = require('moment');
  
 module.exports = {
   initialize: function(){
