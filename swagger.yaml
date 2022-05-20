@@ -8,23 +8,33 @@ servers:
     description: Local server for development
   - url: http://staging-api.example.com
     description: Internal staging server for testing
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT 
 paths:
-  /subscription/startSubscriptionSync:
+  /subscription/sync/start:
     get:
       tags:
         - Subscriptions
       summary: Start subscription sync
+      security:
+        - bearerAuth: []  
       responses:
         200:
           description: Sync started!
         500:
           description: Interval server error!
 
-  /subscription/stopSubscriptionSync:
+  /subscription/sync/stop:
     get:
       tags:
         - Subscriptions
       summary: Stop subscription sync
+      security:
+        - bearerAuth: []  
       responses:
         200:
           description: Sync stoped!
@@ -32,7 +42,71 @@ paths:
           description: Interval server error!
 
     
-  /subscription/getSubscription/{zohoSubscriptionId}:
+  /subscription/{zohoSubscriptionId}:
+    get:
+      tags:
+        - Subscriptions
+      summary: Get a particular subscription details
+      security:
+        - bearerAuth: []  
+      parameters:
+        - in: path
+          name: zohoSubscriptionId
+          schema:
+            type: integer
+          required: true
+          description: Actual Zoho subscription id  
+      responses:
+        200:
+          description: JWT token created!
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  expiry:
+                    type: integer
+        404:
+          description: Subscription not found!
+        500:
+          description: Interval server error!
+
+    
+  /subscription/{zohoSubscriptionId}/renew:
+    get:
+      tags:
+        - Subscriptions
+      summary: Get a particular subscription details
+      security:
+        - bearerAuth: []  
+      parameters:
+        - in: path
+          name: zohoSubscriptionId
+          schema:
+            type: integer
+          required: true
+          description: Actual Zoho subscription id  
+      responses:
+        200:
+          description: JWT token created!
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  expiry:
+                    type: integer
+        404:
+          description: Subscription not found!
+        500:
+          description: Interval server error!
+
+    
+  /subscription/{zohoSubscriptionId}/verify:
     get:
       tags:
         - Subscriptions
