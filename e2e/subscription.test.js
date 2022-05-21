@@ -12,16 +12,14 @@ const fs = require('fs');
 const cert = fs.readFileSync(process.env.SELF_PUBLIC_KEY_PATH);
 const jwt = require('jsonwebtoken');
 
-const baseUrl = "http://localhost";
+const baseUrl = "http://localhost:3000";
 // Create a real time JWT with 1 hour expiry for Padzilla API calls in below test cases
 let authToken = `Bearer ${jwt.sign({type: "Testing"}, cert, { expiresIn: '1h' })}`;
-let zohoSubscriptionId = "";
+var zohoSubscriptionId = prompt('Please enter Zoho subscription_id: ');
 
 // Run once before all test cases are executed
 beforeAll(async () => {
   try {
-    // Prompt user to provide Zoho subscription id for Padzilla API calls
-    zohoSubscriptionId = await prompt('Please enter Zoho subscription_id: ');
     connection.connect(() => {
       console.log("DB connceted");
     });

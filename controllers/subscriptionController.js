@@ -33,7 +33,6 @@ async function generateAccessToken() {
     }
   }).then(function (response) {
     let accessToken = response.data.access_token;
-    console.log("New access token created: ", accessToken);
     return accessToken;
   })
   .catch(function (err) {
@@ -430,10 +429,28 @@ module.exports = {
       },
       data: {
         "subscription_id": zohoSubscriptionId,
+        "auto_collect": false,
         "redirect_url": `${ZOHO.redirect_uri}/subscription/${zohoSubscriptionId}/verify`
       }
     }).then(function (response) {
       console.log(response.data)
+
+      // Update id_last_issue_date in DB for current subscription on successful hostedpage_id receival
+      if (response.data.hostedpage && response.data.hostedpage.hostedpage_id) {
+        let lastIssueDate = moment().format('YYYY-MM-DD hh:mm:ss');
+        try {
+          SubscriptionModel.query(`UPDATE t_subscriptions SET id_last_issue_date='${lastIssueDate}' WHERE id_zoho_subscription = '${zohoSubscriptionId}'`, function (err, data) {
+            if (err) {
+              console.log(`Error updating last issue date into Db - ${zohoSubscriptionId} : `, err);
+            } else {
+              console.log(`Successfully updated last issue date into Db - ${zohoSubscriptionId} : `, data);
+            }
+          })
+        } catch (error) {
+          console.log(`Internal server error: `, error);
+        }
+      }
+
       res.status(200).json(response.data);
     })
     .catch(function (err) {

@@ -24,9 +24,9 @@ paths:
         - bearerAuth: []  
       responses:
         200:
-          description: Sync started!
+          description: Start subscriptions sync
         500:
-          description: Interval server error!
+          description: Interval server error
 
   /subscription/sync/stop:
     get:
@@ -37,9 +37,9 @@ paths:
         - bearerAuth: []  
       responses:
         200:
-          description: Sync stoped!
+          description: Stop subscriptions sync
         500:
-          description: Interval server error!
+          description: Interval server error
 
     
   /subscription/{zohoSubscriptionId}:
@@ -58,7 +58,7 @@ paths:
           description: Actual Zoho subscription id  
       responses:
         200:
-          description: JWT token created!
+          description: JWT token created
           content:
             application/json:
               schema:
@@ -69,16 +69,16 @@ paths:
                   expiry:
                     type: integer
         404:
-          description: Subscription not found!
+          description: Subscription not found
         500:
-          description: Interval server error!
+          description: Interval server error
 
     
   /subscription/{zohoSubscriptionId}/renew:
     get:
       tags:
         - Subscriptions
-      summary: Get a particular subscription details
+      summary: Renew a subscription
       security:
         - bearerAuth: []  
       parameters:
@@ -90,27 +90,18 @@ paths:
           description: Actual Zoho subscription id  
       responses:
         200:
-          description: JWT token created!
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  token:
-                    type: string
-                  expiry:
-                    type: integer
+          description: Get subscription details from Zoho
         404:
-          description: Subscription not found!
+          description: Subscription not found
         500:
-          description: Interval server error!
+          description: Interval server error
 
     
   /subscription/{zohoSubscriptionId}/verify:
     get:
       tags:
         - Subscriptions
-      summary: Get a particular subscription details
+      summary: Verify a subscription
       parameters:
         - in: path
           name: zohoSubscriptionId
@@ -120,17 +111,8 @@ paths:
           description: Actual Zoho subscription id  
       responses:
         200:
-          description: JWT token created!
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  token:
-                    type: string
-                  expiry:
-                    type: integer
+          description: Get subscription details from Zoho
         404:
-          description: Subscription not found!
+          description: Subscription not found
         500:
-          description: Interval server error!
+          description: Interval server error
