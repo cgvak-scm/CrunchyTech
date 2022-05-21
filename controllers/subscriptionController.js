@@ -11,6 +11,7 @@ const ZOHO = {
 const moment = require('moment');
 const jwt = require('jsonwebtoken');
 const fs = require('fs');
+// Public key for JWT encrytion
 const cert = fs.readFileSync(process.env.SELF_PUBLIC_KEY_PATH);
 
 let syncInProgress = false;
@@ -18,6 +19,7 @@ let accessTokenErrorRetry = 0;
 let allSubscriptionsErrorRetry = 0;
 let oneSubscriptionErrorRetry = 0;
 
+// Zoho api call to generate access token from refresh token
 async function generateAccessToken() {
   return await axios({
     method: 'post',
@@ -36,6 +38,7 @@ async function generateAccessToken() {
   })
   .catch(function (err) {
     console.log(`Error generating access token from Zoho: `, err.response.data);
+    // If API fails, retry for maximum 3 times
     if (accessTokenErrorRetry < 3) {
       accessTokenErrorRetry += 1;
       console.log(`Retry ${accessTokenErrorRetry}, for generating new access token`);
@@ -49,6 +52,7 @@ async function generateAccessToken() {
   });
 }
 
+// Zoho api call to fetch single subscription using zohoSubscriptionId & accessToken
 async function getOneSubscriptionFromZoho(zohoSubscriptionId, accessToken) {
   return await axios({
     method: 'get',
@@ -80,6 +84,7 @@ async function getOneSubscriptionFromZoho(zohoSubscriptionId, accessToken) {
   });
 }
 
+// Insert subscription to Db, if not present
 async function insertSubscriptionToDb(zohoSubscription, subscriptionType) {
   try {
     SubscriptionModel.query(`INSERT INTO t_subscriptions 
@@ -99,6 +104,7 @@ async function insertSubscriptionToDb(zohoSubscription, subscriptionType) {
   }
 }
 
+// Update subscription to Db, if present
 async function updateSubscriptionInDb(zohoSubscription, dbSubscription, subscriptionType) {
   try {
     SubscriptionModel.query(`UPDATE t_subscriptions SET id_zoho_subscription='${zohoSubscription.subscription_id}', 
@@ -114,6 +120,8 @@ async function updateSubscriptionInDb(zohoSubscription, dbSubscription, subscrip
   }
 }
 
+// Find subscription from Db, if not present call insertSubscriptionToDb() to insert
+// else call updateSubscriptionInDb() to update
 async function findSubscriptionFromDb(zohoSubscription, subscriptionType) {
   try {
     SubscriptionModel.query(`SELECT * FROM t_subscriptions WHERE id_zoho_subscription = '${zohoSubscription.subscription_id}'`, function (err, data) {
@@ -137,6 +145,7 @@ async function findSubscriptionFromDb(zohoSubscription, subscriptionType) {
   }
 }
 
+// Insert subscription type to Db, if not present
 async function insertSubscriptionTypeToDb(subscription, accessToken, zohoSubscription) {
   try {
     SubscriptionModel.query(`INSERT INTO t_subscription_types (id_label) VALUES ('${zohoSubscription.plan.name}')`, function (err, data) {
@@ -152,6 +161,8 @@ async function insertSubscriptionTypeToDb(subscription, accessToken, zohoSubscri
   }
 }
 
+// Find subscription type from Db, if not present call insertSubscriptionTypeToDb() to insert
+// else call findSubscriptionFromDb() to check if incoming zoho subscription needs to insert or update
 async function findSubscriptionTypeFromDb(subscription, accessToken, zohoSubscription) {
   if (!zohoSubscription) {
     let zohoSubscriptionId = subscription.subscription_id;
@@ -182,6 +193,7 @@ async function findSubscriptionTypeFromDb(subscription, accessToken, zohoSubscri
   }
 }
 
+// Zoho api call to fetch all subscriptions, page wise, using page number & accessToken
 async function getAllSubscriptionsFromZoho(accessToken, page) {
   if (!accessToken) {
     accessToken = await generateAccessToken();
@@ -200,6 +212,8 @@ async function getAllSubscriptionsFromZoho(accessToken, page) {
       let page = response.data.page_context.page;
       let hasMorePage = response.data.page_context.has_more_page
   
+      // If subscriptions present, call findSubscriptionTypeFromDb() for each subscription
+      // to find or insert subscription type thereby inserting subscription to DB with subscription type foreign key
       if (subscriptions.length) {
         function subscriptionsLoop(i, callback) {
           if (i < subscriptions.length) {
@@ -214,6 +228,8 @@ async function getAllSubscriptionsFromZoho(accessToken, page) {
           }
         }
 
+        // Once all subscriptions inserted into DB from one API call, check if next page present
+        // if next page present, make API call with next page number
         subscriptionsLoop(0, function() {
           if (hasMorePage) {
             page += 1;
@@ -236,6 +252,7 @@ async function getAllSubscriptionsFromZoho(accessToken, page) {
     });
   }
 
+  // Start syncing with delay of ZOHO.pollRate seconds
   // if (syncInProgress) {
   //   setTimeout(() => {
   //     getAllSubscriptionsFromZoho(false, 1);
@@ -255,7 +272,7 @@ module.exports = {
    */
    startSubscriptionSync: async function(req, res) {
     try {
-      syncInProgress = true;
+      syncInProgress = true; // Enables syncing
       getAllSubscriptionsFromZoho(false, 1);
       res.status(200).json({message: "Sync started!"});
     } catch (error) {
@@ -269,7 +286,7 @@ module.exports = {
    */
   stopSubscriptionSync: function(req, res) {
     try {
-      syncInProgress = false;
+      syncInProgress = false; // Stops syncing
       res.status(200).json({message: "Sync stopped!"});
     } catch (error) {
       console.log(`Internal server error: `, error);
@@ -284,6 +301,9 @@ module.exports = {
     try {
       let zohoSubscriptionId = req.params.zohoSubscriptionId;
 
+      // Join table query of t_subscriptions and t_subscription_types, 
+      // to get subscription details with subscription type name
+      // for JWT creation
       SubscriptionModel.query(`SELECT t_subscriptions.id_status AS id_status,
       t_subscriptions.id_activated_at AS id_activated_at,
       t_subscriptions.id_next_billing_at AS id_next_billing_at,
@@ -303,6 +323,12 @@ module.exports = {
             let tokenValidityDays = null;
             let differenceInDays = 0;
 
+            // JWT token expiry calculated as follows :-
+              // If status = "future", calculate days difference between now and id_activated_at
+              // If status = "live", calculate days difference between now and id_next_billing_at
+              // If status = "trial", calculate days difference between now and id_current_term_starts_at
+              // If status = "anything_else", no expiry
+            // Select minimun between 20 days and calculated days difference
             if (dbSubscription.id_status == "future") {
               differenceInDays = moment(dbSubscription.id_activated_at).diff(moment(), 'days') + 1;
               if (differenceInDays > 20) {
@@ -331,9 +357,10 @@ module.exports = {
               }
             }
             else {
-              tokenValidityDays = null;
+              tokenValidityDays = null; // set to null, if status != ['future','live','trial']
             }
 
+            // minimum JWT payload, without expiration time
             let jwtPayload = {
               status: dbSubscription.id_status,
               subscriptionPlanLabel: dbSubscription.subscription_type_id_label,
@@ -344,11 +371,14 @@ module.exports = {
 
             if (tokenValidityDays != null) {
               let expirationTime = moment().add(tokenValidityDays, 'days').format('YYYY-MM-DD hh:mm:ss');
+              // JWT payload, with expiration time
               jwtPayload.expirationTime = expirationTime;
 
+              // JWT token created, with expiration time for status = ['future','live','trial']
               token = jwt.sign(jwtPayload, cert, { expiresIn: tokenValidityDays*86400 });
 
               try {
+                // Update id_token_expires_at in DB for current subscription
                 SubscriptionModel.query(`UPDATE t_subscriptions SET id_token_expires_at='${expirationTime}' WHERE id_zoho_subscription = '${zohoSubscriptionId}'`, function (err, data) {
                   if (err) {
                     console.log(`Error updating expiration time into Db - ${zohoSubscriptionId} : `, err);
@@ -361,6 +391,7 @@ module.exports = {
               }
             }
             else {
+              // JWT token created, without expiration time status != ['future','live','trial']
               token = jwt.sign(jwtPayload, cert, { algorithm: 'RS256'});
             }
             
@@ -384,9 +415,11 @@ module.exports = {
    * zohoAuthController.renewZohoSubscription()
    */
   renewZohoSubscription: async function(req, res) {
+    // Generate access token to create hosted pages update card for subscription renewal
     let accessToken = await generateAccessToken();
     let zohoSubscriptionId = req.params.zohoSubscriptionId;
 
+    // Zoho API call to create hosted pages update card for subscription renewal
     axios({
       method: 'post',
       url: `https://subscriptions.zoho.com/api/v1/hostedpages/updatecard`,
@@ -413,11 +446,14 @@ module.exports = {
    * zohoAuthController.verifyZohoSubscription()
    */
   verifyZohoSubscription: async function(req, res) {
+    // Generate access token to fetch one subscription with Zoho API
     let accessToken = await generateAccessToken();
     let zohoSubscriptionId = req.params.zohoSubscriptionId;
+    // Fetch one subscription with Zoho API using generated access token
     zohoSubscription = await getOneSubscriptionFromZoho(zohoSubscriptionId, accessToken);
 
     try {
+      // Find one subscription from DB
       SubscriptionModel.query(`SELECT * FROM t_subscriptions WHERE t_subscriptions.id_zoho_subscription='${zohoSubscriptionId}' LIMIT 1`, function (err, data) {
         if (err) {
           console.log(`Error finding subscription from Db - ${zohoSubscriptionId} : `, err);
@@ -425,6 +461,7 @@ module.exports = {
           res.status(500).json(err);
         } else {
           let subscription = data[0];
+          // Sync one subscription and its subscription type to DB
           findSubscriptionTypeFromDb(subscription, accessToken, zohoSubscription);
     
           res.status(200).json(zohoSubscription);

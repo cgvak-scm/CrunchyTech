@@ -15,6 +15,8 @@ module.exports = {
       const bearer = bearerHeader.split(' ');
       const bearerToken = bearer[1];
 
+      // Verify token authenticity using jwt.verify() method
+      // Allow API calls if authentic JWT is present, else 401 error returned as response
       jwt.verify(bearerToken, cert, function(err) {
         if (err) {
           let msg = err.message.replace("jwt", "token").charAt(0).toUpperCase() + err.message.slice(1);
@@ -26,6 +28,7 @@ module.exports = {
         }
       });
     } else {
+      // 401 error returned as response if no JWT provided
       return res.status(401).json({message: "No auth token"});
     }
   }
