@@ -1,0 +1,32 @@
+version: '3.8'
+services:
+  db:
+    image: mysql:8.0.29
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    expose:
+      - "3306"
+    ports:
+      - "3306:3306" 
+    env_file: ./.env 
+    environment:
+      MYSQL_DATABASE: $SELF_DATABASE
+      MYSQL_ALLOW_EMPTY_PASSWORD: ok
+      MYSQL_ROOT_PASSWORD: $SELF_DATABASE_PASSWORD
+      MYSQL_PASSWORD: $SELF_DATABASE_PASSWORD
+      MYSQL_ROOT_HOST: '%'
+    networks:
+      - app-network
+  app:
+    depends_on:
+      - db
+    build: .
+    command: bash -c 'while !</dev/tcp/db/3306; do sleep 1; done; npm start'
+    ports:
+      - "3000:3000"
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

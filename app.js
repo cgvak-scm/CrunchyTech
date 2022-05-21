@@ -6,7 +6,6 @@ const indexRouter = require('./routes/index');
 const swaggerUi = require('swagger-ui-express');
 const YAML = require('yamljs');
 const swaggerDocument = YAML.load('./swagger.yaml');
-const request = require('supertest');
 
 const app = express();
 

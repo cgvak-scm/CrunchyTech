@@ -15,6 +15,7 @@ const fs = require('fs');
 const cert = fs.readFileSync(process.env.SELF_PUBLIC_KEY_PATH);
 
 let syncInProgress = false;
+let syncSubscription = null;
 let accessTokenErrorRetry = 0;
 let allSubscriptionsErrorRetry = 0;
 let oneSubscriptionErrorRetry = 0;
@@ -227,9 +228,9 @@ async function getAllSubscriptionsFromZoho(accessToken, page) {
           }
         }
 
-        // Once all subscriptions inserted into DB from one API call, check if next page present
-        // if next page present, make API call with next page number
         subscriptionsLoop(0, function() {
+          // Once all subscriptions inserted into DB from one API call, check if next page present
+          // if next page present, make API call with next page number
           if (hasMorePage) {
             page += 1;
             getAllSubscriptionsFromZoho(accessToken, page);
@@ -252,11 +253,11 @@ async function getAllSubscriptionsFromZoho(accessToken, page) {
   }
 
   // Start syncing with delay of ZOHO.pollRate seconds
-  // if (syncInProgress) {
-  //   setTimeout(() => {
-  //     getAllSubscriptionsFromZoho(false, 1);
-  //   }, ZOHO.pollRate * 1000);
-  // }
+  if (syncInProgress) {
+    syncSubscription = setTimeout(() => {
+      getAllSubscriptionsFromZoho(false, 1);
+    }, ZOHO.pollRate * 1000);
+  }
 }
 
 /**
@@ -285,7 +286,8 @@ module.exports = {
    */
   stopSubscriptionSync: function(req, res) {
     try {
-      syncInProgress = false; // Stops syncing
+      syncInProgress = false; // Stops future sync
+      clearTimeout(syncSubscription); // Stops queued sync
       res.status(200).json({message: "Sync stopped!"});
     } catch (error) {
       console.log(`Internal server error: `, error);

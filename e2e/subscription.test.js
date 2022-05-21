@@ -9,10 +9,11 @@ const supertest = require('supertest');
 const prompt = require('prompt-sync')();
 require('dotenv').config();
 const fs = require('fs');
-const cert = fs.readFileSync(process.env.SELF_PUBLIC_KEY_PATH);
+// Full path of public key
+const cert = fs.readFileSync('/Users/bibek/Projects/Padzilla/padzilla/public.pem');
 const jwt = require('jsonwebtoken');
 
-const baseUrl = "http://localhost:3000";
+const baseUrl = process.env.SELF_PROTOCOL + "://" + process.env.SELF_HOST + ":" + process.env.SELF_PORT;
 // Create a real time JWT with 1 hour expiry for Padzilla API calls in below test cases
 let authToken = `Bearer ${jwt.sign({type: "Testing"}, cert, { expiresIn: '1h' })}`;
 var zohoSubscriptionId = prompt('Please enter Zoho subscription_id: ');

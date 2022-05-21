@@ -4,10 +4,24 @@ info:
   description: Padzilla Open API
   version: 0.0.0
 servers:
-  - url: http://localhost:3000
-    description: Local server for development
-  - url: http://staging-api.example.com
-    description: Internal staging server for testing
+  - url: '{protocol}://{host}:{port}'
+    variables:
+      protocol:
+        enum:
+          - http
+          - https
+        default: http
+      host:
+        enum:
+          - localhost
+          - YOUR_DOMAIN_NAME
+        default: 'localhost'
+      port:
+        enum:
+          - '443'
+          - '80'
+          - '3000'
+        default: '3000'
 components:
   securitySchemes:
     bearerAuth:
