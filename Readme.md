@@ -111,7 +111,7 @@ For development, you will need **`NODE.JS`**, **`NPM`**, **`MYSQL`** and **`DOCK
 
   $ ***git clone https://gitlab.com/das.bibekbharati/padzilla.git***
 
-  $ ***cd padzilla***
+  $ ***cd [PROJECT_FOLDER_NAME]***
 
   $ ***npm install***
 
