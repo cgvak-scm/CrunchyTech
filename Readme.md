@@ -109,7 +109,7 @@ For development, you will need **`NODE.JS`**, **`NPM`**, **`MYSQL`** and **`DOCK
 
 ## Project Installation
 
-  $ ***git clone https://gitlab.com/das.bibekbharati/padzilla.git***
+  $ ***git clone [PROJECT_GIT_URL]***
 
   $ ***cd [PROJECT_FOLDER_NAME]***
 
