@@ -128,25 +128,26 @@ For development, you will need **`NODE.JS`**, **`NPM`** and **`MYSQL`** installe
 - Put the **`database.sql`** file in the **`root`** folder.
 
 - Put the **`public.pem`** file in the **`root`** folder.
-    ##### The **`public.pem`** file should have the public key for JWT encryption.
+
+  `// The `**`public.pem `**`file should have the public key for JWT encryption.`
 
 - Edit the **`.env`** file environment variables as follows:-
     ###### **SELF_PROTOCOL**=http
     ###### **SELF_HOST**=localhost
     ###### **SELF_PORT**=3000
-    ###### **SELF_PUBLIC_KEY_PATH**=/usr/src/app/public.pem // `Keep This Path For Availability Inside Docker Image`
+    ###### **SELF_PUBLIC_KEY_PATH**=/usr/src/app/public.pem `// For development - give full path`
     
     ###### **SELF_DATABASE**=padzilla_database
-    ###### **SELF_DATABASE_HOST**=db // `Keep This For MYSQL Service Availability Inside Docker Image`
+    ###### **SELF_DATABASE_HOST**=db `// For development - use 127.0.0.1`
     ###### **SELF_DATABASE_USER**=root
     ###### **SELF_DATABASE_PASSWORD**=CG-vak123
 
-    ###### **SELF_ZOHO_CLIENT_ID**=1000.3IIM80SYKPGU3HCHJ9SF1VMBWTLZUV // `Provided By Client`
-    ###### **SELF_ZOHO_SECRET**=0d3e06e5ff52d9e20ca04ee8e36b1cd63e70193443 // `Provided By Client`
-    ###### **SELF_ZOHO_REFRESH_TOKEN**=1000.941aeb6fd3d0efb7c680b045ffbbf922.b11b2235e486e6aa4c1156688953e98e // `Provided By Client`
-    ###### **SELF_ZOHO_ORGANIZATION_ID**=772821291 // `Provided By Client`
-    ###### **SELF_ZOHO_REDIRECT_URI**=http://localhost:3000 // `Provided By Client`
-    ###### **SELF_ZOHO_POLL_RATE_SECONDS**=14400 // `Sync Process At Every 4 Hours`
+    ###### **SELF_ZOHO_CLIENT_ID**=1000.3IIM80SYKPGU3HCHJ9SF1VMBWTLZUV `// Provided By Client`
+    ###### **SELF_ZOHO_SECRET**=0d3e06e5ff52d9e20ca04ee8e36b1cd63e70193443 `// Provided By Client`
+    ###### **SELF_ZOHO_REFRESH_TOKEN**=1000.941aeb6fd3d0efb7c680b045ffbbf922.b11b2235e486e6aa4c1156688953e98e `// Provided By Client`
+    ###### **SELF_ZOHO_ORGANIZATION_ID**=772821291 `// Provided By Client`
+    ###### **SELF_ZOHO_REDIRECT_URI**=http://localhost:3000 `// Provided By Client`
+    ###### **SELF_ZOHO_POLL_RATE_SECONDS**=14400 `// Sync Process At Every 4 Hours`
 
 ---
 
