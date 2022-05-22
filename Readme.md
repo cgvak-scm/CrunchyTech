@@ -20,9 +20,42 @@ A nodejs app to sync, renew and verify Zoho subscriptions.
   - "supertest": "^6.2.3" - `For test cases creation`
 
 ---
-## Requirements
+## Environment Setup
 
-For development, you will need **`NODE.JS`**, **`NPM`**, **`MYSQL`** and **`DOCKER`**, installed in your environement.
+### **Production**
+
+For production, you will just need **`DOCKER`**, installed in your environement.
+
+  - ### Docker
+    - #### Docker installation on Windows
+
+      Just go on [official Docker website](https://docs.docker.com/desktop/windows/install/) and download the installer.
+
+    - #### Docker installation on Ubuntu
+      **`Ubuntu 20.04`**
+      Docker installtion instructions can be found [here](https://www.digitalocean.com/community/tutorials/how-to-install-and-use-docker-on-ubuntu-20-04).
+
+      **`Ubuntu 18.04`**
+      Docker installtion instructions can be found [here](https://www.digitalocean.com/community/tutorials/how-to-install-and-use-docker-on-ubuntu-18-04).
+
+    - #### Other Operating Systems
+      You can find more information about the installation on the [official Docker website](https://docs.docker.com/get-docker/).
+
+    - #### Post installation
+      - If the installation was successful, you should be able to run the following command.
+
+          $ ***docker info***
+
+            Client:
+              Context:    default
+              Debug Mode: false
+              Plugins:
+                buildx: Docker Buildx (Docker Inc., v0.8.2)
+                compose: Docker Compose (Docker Inc., v2.5.1)
+
+### **Development**
+
+For development, you will need **`NODE.JS`**, **`NPM`** and **`MYSQL`** installed in your environement.
 
   - ### Node
     - #### Node installation on Windows
@@ -77,33 +110,6 @@ For development, you will need **`NODE.JS`**, **`NPM`**, **`MYSQL`** and **`DOCK
           $ ***mysqld --version***
 
             Ver 8.0.29
-
-  - ### Docker
-    - #### Docker installation on Windows
-
-      Just go on [official Docker website](https://docs.docker.com/desktop/windows/install/) and download the installer.
-
-    - #### Docker installation on Ubuntu
-      **`Ubuntu 20.04`**
-      Docker installtion instructions can be found [here](https://www.digitalocean.com/community/tutorials/how-to-install-and-use-docker-on-ubuntu-20-04).
-
-      **`Ubuntu 18.04`**
-      Docker installtion instructions can be found [here](https://www.digitalocean.com/community/tutorials/how-to-install-and-use-docker-on-ubuntu-18-04).
-
-    - #### Other Operating Systems
-      You can find more information about the installation on the [official Docker website](https://docs.docker.com/get-docker/).
-
-    - #### Post installation
-      - If the installation was successful, you should be able to run the following command.
-
-          $ ***docker info***
-
-            Client:
-              Context:    default
-              Debug Mode: false
-              Plugins:
-                buildx: Docker Buildx (Docker Inc., v0.8.2)
-                compose: Docker Compose (Docker Inc., v2.5.1)
 
 ---
 
