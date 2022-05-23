@@ -125,8 +125,6 @@ For development, you will need **`NODE.JS`**, **`NPM`** and **`MYSQL`** installe
 
 ## Project Configuration
 
-- Put the **`database.sql`** file in the **`root`** folder.
-
 - Put the **`public.pem`** file in the **`root`** folder.
 
   `// The `**`public.pem `**`file should have the public key for JWT encryption.`
@@ -155,9 +153,9 @@ For development, you will need **`NODE.JS`**, **`NPM`** and **`MYSQL`** installe
 
   $ ***docker-compose up***
 
-## Configuring Database
+## Configuring Database Tables
 
-  $ ***cat database.sql | docker exec -i [DATABASE_CONTAINER_NAME] mysql -u[DATABASE_USER] -p[DATABASE_PASSWORD] [DATABASE_NAME]***
+  $ ***cat [PATH_TO_SQL_FILE] | docker exec -i [DATABASE_CONTAINER_NAME] mysql -u[DATABASE_USER] -p[DATABASE_PASSWORD] [DATABASE_NAME]***
 
 ## Testing The Project
 
