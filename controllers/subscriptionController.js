@@ -12,7 +12,7 @@ const moment = require('moment');
 const jwt = require('jsonwebtoken');
 const fs = require('fs');
 // Public key for JWT encrytion
-const cert = fs.readFileSync(process.env.SELF_PUBLIC_KEY_PATH);
+const cert = fs.readFileSync(`${process.env.SELF_ROOT_FOLDER_PATH}public.pem`);
 
 let syncInProgress = false;
 let syncSubscription = null;

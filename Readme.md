@@ -44,14 +44,15 @@ For production, you will just need **`DOCKER`**, installed in your environement.
     - #### Post installation
       - If the installation was successful, you should be able to run the following command.
 
-          $ ***docker info***
-
-            Client:
-              Context:    default
-              Debug Mode: false
-              Plugins:
-                buildx: Docker Buildx (Docker Inc., v0.8.2)
-                compose: Docker Compose (Docker Inc., v2.5.1)
+        > $ ***docker info***
+        ```
+        Client:
+          Context:    default
+          Debug Mode: false
+          Plugins:
+            buildx: Docker Buildx (Docker Inc., v0.8.2)
+            compose: Docker Compose (Docker Inc., v2.5.1)
+        ```
 
 ### **Development**
 
@@ -67,9 +68,9 @@ For development, you will need **`NODE.JS`**, **`NPM`** and **`MYSQL`** installe
 
       You can install nodejs and npm easily with apt install, just run the following commands.
 
-        $ ***sudo apt install nodejs***
+        > $ ***sudo apt install nodejs***
 
-        $ ***sudo apt install npm***
+        > $ ***sudo apt install npm***
 
     - #### Other Operating Systems
       You can find more information about the installation on the [official Node.js website](https://nodejs.org/) and the [official NPM website](https://npmjs.org/).
@@ -77,18 +78,20 @@ For development, you will need **`NODE.JS`**, **`NPM`** and **`MYSQL`** installe
     - #### Post installation
       - If the installation was successful, you should be able to run the following command.
 
-          $ ***node --version***
+          > $ ***node --version***
+          ```
+          v16.15.0
+          ```
 
-            v16.15.0
-
-          $ ***npm --version***
-
-            v8.5.5
+          > $ ***npm --version***
+          ```    
+          v8.5.5
+          ```
 
 
       - If you need to update `npm`, you can make it using `npm`! Cool right? After running the following command, just open again the command line and be happy.
 
-          $ ***npm install npm -g***
+          > $ ***npm install npm -g***
 
   - ### Mysql
     - #### Mysql installation on Windows
@@ -107,19 +110,20 @@ For development, you will need **`NODE.JS`**, **`NPM`** and **`MYSQL`** installe
     - #### Post installation
       - If the installation was successful, you should be able to run the following command.
 
-          $ ***mysqld --version***
-
-            Ver 8.0.29
+          > $ ***mysqld --version***
+          ```
+          Ver 8.0.29
+          ```
 
 ---
 
 ## Project Installation
 
-  $ ***git clone [PROJECT_GIT_URL]***
+  > $ ***git clone [PROJECT_GIT_URL]***
 
-  $ ***cd [PROJECT_FOLDER_NAME]***
+  > $ ***cd [PROJECT_FOLDER_NAME]***
 
-  $ ***npm install***
+  > $ ***npm install***
 
 ---
 
@@ -130,10 +134,11 @@ For development, you will need **`NODE.JS`**, **`NPM`** and **`MYSQL`** installe
   `// The `**`public.pem `**`file should have the public key for JWT encryption.`
 
 - Edit the **`.env`** file environment variables as follows:-
+
     ###### **SELF_PROTOCOL**=http
     ###### **SELF_HOST**=localhost
     ###### **SELF_PORT**=3000
-    ###### **SELF_PUBLIC_KEY_PATH**=/usr/src/app/public.pem `// For development - give full path`
+    ###### **SELF_ROOT_FOLDER_PATH**=/usr/src/padzilla/ `// For development - give full path`
     
     ###### **SELF_DATABASE**=padzilla_database
     ###### **SELF_DATABASE_HOST**=db `// For development - use 127.0.0.1`
@@ -151,28 +156,34 @@ For development, you will need **`NODE.JS`**, **`NPM`** and **`MYSQL`** installe
 
 ## Starting The Project
 
-  $ ***docker-compose up***
+  > $ ***docker-compose up***
 
 ## Configuring Database Tables
 
-  $ ***cat [PATH_TO_SQL_FILE] | docker exec -i [DATABASE_CONTAINER_NAME] mysql -u[DATABASE_USER] -p[DATABASE_PASSWORD] [DATABASE_NAME]***
+  - **Auto Import**
+
+    Put all **`.sql`** files in the **`mysqlDumps/`** directory.
+
+  - **Manual Import**
+
+      > $ ***cat [PATH_TO_SQL_FILE] | docker exec -i [DATABASE_CONTAINER_NAME] mysql -u[DATABASE_USER] -p[DATABASE_PASSWORD] [DATABASE_NAME]***
 
 ## Testing The Project
 
-  $ ***npm test***
+  > $ ***npm test***
   #### `// Give full path of `**`public.pem `**`file in the `**`subscription.test.js `**`file.`
 
 ## Stopping The Project
 
-  $ ***docker-compose down***
+  > $ ***docker-compose down***
 
 ## Stopping The Project
 
-  $ ***docker-compose down***
+  > $ ***docker-compose down***
 
 ## Stopping The Project
 
-  $ ***docker-compose down***
+  > $ ***docker-compose down***
 
 ## Project Server
 

@@ -1,7 +1,7 @@
 var passport = require('passport');
 const jwt = require('jsonwebtoken');
 const fs = require('fs');
-const cert = fs.readFileSync(process.env.SELF_PUBLIC_KEY_PATH);
+const cert = fs.readFileSync(`${process.env.SELF_ROOT_FOLDER_PATH}public.pem`);
  
 module.exports = {
   initialize: function(){

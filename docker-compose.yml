@@ -3,25 +3,34 @@ services:
   db:
     image: mysql:8.0.29
     command: --default-authentication-plugin=mysql_native_password
-    restart: always
+    restart: on-failure
+    volumes:
+      - ./mysqlDumps:/docker-entrypoint-initdb.d
+    cap_add:
+      - SYS_NICE
     expose:
       - "3306"
     ports:
-      - "3306:3306" 
-    env_file: ./.env 
+      - "3306:3306"
+    env_file: ./.env
     environment:
       MYSQL_DATABASE: $SELF_DATABASE
-      MYSQL_ALLOW_EMPTY_PASSWORD: ok
       MYSQL_ROOT_PASSWORD: $SELF_DATABASE_PASSWORD
-      MYSQL_PASSWORD: $SELF_DATABASE_PASSWORD
       MYSQL_ROOT_HOST: '%'
+    healthcheck:
+      test: ['CMD', 'mysqladmin', 'ping', '-h$SELF_DATABASE_HOST', '-u$SELF_DATABASE_PASSWORD', '-p$MYSQL_ROOT_PASSWORD' ]
+      timeout: 20s
+      retries: 10
     networks:
       - app-network
   app:
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     build: .
-    command: bash -c 'while !</dev/tcp/db/3306; do sleep 1; done; npm start'
+    command: >
+      bash -c "while !</dev/tcp/db/3306; do sleep 1; done; npm start"
+    restart: on-failure
     ports:
       - "3000:3000"
     networks:
