@@ -3,7 +3,7 @@ services:
   db:
     image: mysql:8.0.29
     command: --default-authentication-plugin=mysql_native_password
-    restart: on-failure
+    restart: always
     volumes:
       - ./mysqlDumps:/docker-entrypoint-initdb.d
     cap_add:
@@ -30,7 +30,7 @@ services:
     build: .
     command: >
       bash -c "while !</dev/tcp/db/3306; do sleep 1; done; npm start"
-    restart: on-failure
+    restart: always
     ports:
       - "3000:3000"
     networks:
