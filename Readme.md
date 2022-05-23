@@ -166,4 +166,18 @@ For development, you will need **`NODE.JS`**, **`NPM`** and **`MYSQL`** installe
 
   $ ***docker-compose down***
 
+## Stopping The Project
+
+  $ ***docker-compose down***
+
+## Stopping The Project
+
+  $ ***docker-compose down***
+
+## Project Server
+
+  - Local server will start at **http://localhost:3000/**
+
+  - Open APIs can be accessed at **http://localhost:3000/api-docs/**
+
 ---
