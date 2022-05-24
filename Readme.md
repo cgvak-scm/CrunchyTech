@@ -18,8 +18,6 @@ A nodejs app to sync, renew and verify Zoho subscriptions.
   - "jest": "^28.1.0" - `For test cases writing and running using supertes`
   - "prompt-sync": "^4.2.0" - `For prompting user for inputs via terminal during test cases execution`
   - "supertest": "^6.2.3" - `For test cases creation`
-
----
 ## Environment Setup
 
 ### **Production**
@@ -115,8 +113,6 @@ For development, you will need **`NODE.JS`**, **`NPM`** and **`MYSQL`** installe
           Ver 8.0.29
           ```
 
----
-
 ## Project Installation
 
   > $ ***git clone [PROJECT_GIT_URL]***
@@ -124,8 +120,6 @@ For development, you will need **`NODE.JS`**, **`NPM`** and **`MYSQL`** installe
   > $ ***cd [PROJECT_FOLDER_NAME]***
 
   > $ ***npm install***
-
----
 
 ## Project Configuration
 
@@ -151,8 +145,6 @@ For development, you will need **`NODE.JS`**, **`NPM`** and **`MYSQL`** installe
     ###### **SELF_ZOHO_ORGANIZATION_ID**=772821291 `// Provided By Client`
     ###### **SELF_ZOHO_REDIRECT_URI**=http://localhost:3000 `// Provided By Client`
     ###### **SELF_ZOHO_POLL_RATE_SECONDS**=14400 `// Sync Process At Every 4 Hours`
-
----
 
 ## Starting The Project
 
@@ -190,5 +182,3 @@ For development, you will need **`NODE.JS`**, **`NPM`** and **`MYSQL`** installe
   - Local server will start at **http://localhost:3000/**
 
   - Open APIs can be accessed at **http://localhost:3000/api-docs/**
-
----
